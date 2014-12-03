@@ -28,6 +28,7 @@ var tabs = ( function(){
 				$panelsContainer.animate({
 					height: $activePanel.outerHeight()
 				}, speed, function(){
+					$panelsContainer.height( '' );
 				});
 			}
 			$window.hashchange( function( e ){
