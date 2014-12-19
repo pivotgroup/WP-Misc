@@ -44,6 +44,9 @@ var toggling = ( function( ){
 			$window.unbind( 'mousedown.mobile-menu touchstart.mobile-menu' );
 		}
 		function toggleItem(e) {
+			if ( $(e.target).prop( 'tagName' ) === 'A' &&  $(e.target).attr('href') ){
+				return;
+			}
 			e.preventDefault();
 			e.stopPropagation();
 			if( _open ) {
