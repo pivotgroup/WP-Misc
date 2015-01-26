@@ -1,267 +1,199 @@
+jQuery( function($){
+	
 	/* ==== SCROLLING ============================================= */
-	var scrolling = ( function( args ){
-		var scrolling = {};
-		_.extend( scrolling, Backbone.Events);
+	// events mixin
+	var Events = ( typeof( Backbone ) !== 'undefined' && Backbone.hasOwnProperty( 'Events' ) ) ? Backbone.Events : function(){var t=[],e=(t.push,t.slice),s=(t.splice,/\s+/),i=function(t,e,i,n){if(!i)return!0;if("object"==typeof i)for(var r in i)t[e].apply(t,[r,i[r]].concat(n));else{if(!s.test(i))return!0;for(var c=i.split(s),l=0,a=c.length;a>l;l++)t[e].apply(t,[c[l]].concat(n))}},n=function(t,e){var s,i=-1,n=t.length;switch(e.length){case 0:for(;++i<n;)(s=t[i]).callback.call(s.ctx);return;case 1:for(;++i<n;)(s=t[i]).callback.call(s.ctx,e[0]);return;case 2:for(;++i<n;)(s=t[i]).callback.call(s.ctx,e[0],e[1]);return;case 3:for(;++i<n;)(s=t[i]).callback.call(s.ctx,e[0],e[1],e[2]);return;default:for(;++i<n;)(s=t[i]).callback.apply(s.ctx,e)}},r={on:function(t,e,s){if(!i(this,"on",t,[e,s])||!e)return this;this._events||(this._events={});var n=this._events[t]||(this._events[t]=[]);return n.push({callback:e,context:s,ctx:s||this}),this},once:function(t,e,s){if(!i(this,"once",t,[e,s])||!e)return this;var n=this,r=_.once(function(){n.off(t,r),e.apply(this,arguments)});return r._callback=e,this.on(t,r,s),this},off:function(t,e,s){var n,r,c,l,a,h,f,o;if(!this._events||!i(this,"off",t,[e,s]))return this;if(!t&&!e&&!s)return this._events={},this;for(l=t?[t]:_.keys(this._events),a=0,h=l.length;h>a;a++)if(t=l[a],n=this._events[t]){if(c=[],e||s)for(f=0,o=n.length;o>f;f++)r=n[f],(e&&e!==r.callback&&e!==r.callback._callback||s&&s!==r.context)&&c.push(r);this._events[t]=c}return this},trigger:function(t){if(!this._events)return this;var s=e.call(arguments,1);if(!i(this,"trigger",t,s))return this;var r=this._events[t],c=this._events.all;return r&&n(r,s),c&&n(c,arguments),this},listenTo:function(t,e,s){var i=this._listeners||(this._listeners={}),n=t._listenerId||(t._listenerId=_.uniqueId("l"));return i[n]=t,t.on(e,"object"==typeof e?this:s,this),this},stopListening:function(t,e,s){var i=this._listeners;if(i){if(t)t.off(e,"object"==typeof e?this:s,this),e||s||delete i[t._listenerId];else{"object"==typeof e&&(s=this);for(var n in i)i[n].off(e,s,this);this._listeners={}}return this}}};return r}();
+	var Scrolling = ( function( args ){
 
-		var settings = $.extend( true, {}, {
-			trackers: {
-				pageTop: function( info ){
-					return info.progress.percent <= 0;
+		var info = {};
+
+		function WindowScrollInfo(){
+			var $html = $('html');
+			var $window = $(window);
+			info = {
+				windowHeight: $window.height(),
+				fullHeight: $html.height(),
+				scrollTop: $window.scrollTop(),
+				direction: 'down',
+				progress: {
+					px: 0,
+					percent: 0
 				},
-				pageBottom: function( info ){
-					return info.progress.percent >= 100;
+				screenBottom: {
+					px: $window.height(),
+					percent: 0
 				}
+			};
+			function handleScroll(e){
+				var s = $window.scrollTop();
+				info.direction = info.progress.px < s ? 'down' : 'up';
+				info.progress.px = s;
+				info.scrollTop = s;
+				info.progress.percent = info.progress.px / this.getScrollHeight();
+				info.screenBottom.px = s + info.windowHeight;
+				info.screenBottom.percent = info.screenBottom.px / this.getScrollHeight();
+				
+				this.trigger( 'scroll', this );
 			}
-		}, args );
-
-		// object for storing all the information associated with scrolling and screenheight.
-		var info = {
-			windowHeight: $window.height(),
-			bodyHeight: $body.height(),
-			scrollTop: $window.scrollTop(),
-			direction: 'down',
-			progress: {
-				px: 0,
-				percent: 0
-			},
-			screenBottom: {
-				px: $window.height(),
-				percent: 0
-			}
-		};
-
-		var TrackerM = Backbone.Model.extend({
-			defaults: {
-				id: name,
-				type: 'point',
-				value: false,
-				inView: false
-			},
-			initialize: function(){
-
-			},
-			handleScroll: function(){
-				this.set( 'inView', this.isInView() );
-			},
-			getInfo: function( pixelsOrPercent){
-				var trackerInfo = {
-					progress: _.extend( {}, info.progress ),
-					direction: info.direction,
-					inView: this.get('inView'),
-				}
-				switch( this.get('type' ) ){
-					case 'pixel':
-						trackerInfo.pointInfo = scrolling.getPxScreenInfo( tracker.get('value') );
-						break;
-					case 'percent':
-						trackerInfo.pointInfo = scrolling.getPxScreenInfo( getPercentInPx( tracker.get('value') ) );
-						break;
-					case 'element':
-						trackerInfo.elementInfo = scrolling.getElementScreenInfo( tracker.get('value') );
-						break;
-					case 'custom':
-						break;
-				}
-				return trackerInfo;
-			},
-			isInView: function(){
-				switch( this.get('type') ){
-					case 'pixel':
-						return scrolling.isPxInView( this.get('value') );
-						break;
-					case 'percent':
-						return scrolling.isPercentInView( this.get('value') );
-						break;
-					case 'element':
-						return scrolling.isElementInView( this.get('value' ) );
-						break;
-					case 'custom':
-						return scrolling.isCustomInView( this.get('value' ) );
-				}
-			},
-			getTopPos: function( unit ){
-				if ( unit === 'percent' ) unit = '%';
-				switch( this.get('type') ){
-					case 'pixel':
-						return unit === '%' ? scrolling.getPxInPercent( this.get('value') ) : this.get('value');
-					case 'percent':
-						return unit === '%' ? this.get('value') : scrolling.getPercentInPx( this.get('value') );
-					case 'element':
-						return unit === '%' ? scrolling.getPxInPercent( this.get('value').offset().top ) : this.get('value').offset().top ;
-					case 'custom':
-						// nada
-				}
-				return undefined;
-			},
-			getBottomPos: function( unit ){
-				if ( unit === 'percent' ) unit = '%';
-				switch( this.get('type') ){
-					case 'pixel':
-					case 'percent':
-						return this.getTopPos( unit );
-					case 'element':
-						return unit === '%' ? scrolling.getPxInPercent( this.get('value').offset().top + this.get('value').outerHeight() ) : this.get('value').offset().top + this.get('value').outerHeight() ;
-					case 'custom':
-						// nada
-				}
-				return undefined;
-			},
-			getScreenPos: function( unit, fromBottomOfElement ){
-				if ( !fromBottomOfElement ) fromBottomOfElement = false;
-				if ( unit === 'percent' ) unit = '%';
-
-				var fromScreenTop = fromBottomOfElement ? this.getBottomPos( 'px' ) - info.progress.px : this.getTopPos( 'px' ) - info.progress.px ;
-				return unit === '%' ? fromScreenTop / info.windowHeight : fromScreenTop;
-			},
-			getBottomScreenPos: function( unit, fromBottomOfElement ){
-				if ( !fromBottomOfElement ) fromBottomOfElement = false;
-				if ( unit === 'percent' ) unit = '%';
-
-				var fromScreenBottom = fromBottomOfElement ? info.screenBottom.px - this.getBottomPos( 'px' ) : info.screenBottom.px - this.getTopPos( 'px' ) ;
-				return unit === '%' ? fromScreenBottom / info.windowHeight : fromScreenBottom;
-			}
-		});
-		var trackers = new Backbone.Collection( [], {
-			model: TrackerM
-		});
-
-		function getScrollHeight(){
-			return ( info.bodyHeight - info.windowHeight );
+			// you got it, track all the information on resize.
+			$window.on( 'resize', function(){
+				info.windowHeight = $window.height();
+				info.fullHeight = $html.height();
+			});
+			$window.on( 'scroll load', handleScroll.bind( this ) );
+			$.extend( this, Events );
 		}
-		function getPxInPercent( px ){
-			return px / getScrollHeight()
+		var p = WindowScrollInfo.prototype;
+		p.get = function getData( name ){
+			return info.hasOwnProperty( name ) ? info[name] : undefined;
 		}
-		function getPercentInPx( percent ){
-			return percent * getScrollHeight();
+		p.getProgress = function getProgress(unit){
+			if ( unit === 'percent' ) unit = '%';
+			return unit === '%' ? info.progress.percent : info.progress.px;
 		}
-		function isPxInView( px ){
+		p.getInfo = function getInfo(){
+			// prevent access, copy object
+			return $.extend( {}, info );
+		}
+		p.getScrollHeight = function getScrollHeight(){
+			return ( info.fullHeight - info.windowHeight );
+		}
+		p.getPxInPercent = function getPxInPercent( px ){
+			return px / this.getScrollHeight()
+		}
+		p.getPercentInPx = function getPercentInPx( percent ){
+			return percent * this.getScrollHeight();
+		}
+		p.isPxInView = function isPxInView( px ){
 			return info.progress.px <= px && px <= info.screenBottom.px;
 		}
-		function isPercentInView( percent ){
+		p.isPercentInView = function isPercentInView( percent ){
 			return info.progress.percent <= percent && percent <= info.screenBottom.percent;
 		}
-		function isElementCoveringView( $element ){
+		p.isElementCoveringView = function isElementCoveringView( $element ){
 			return ( $element.offset().top <= info.progress.px && ( $element.offset().top + $element.outerHeight() ) >= info.progress.px )
 		}
-		function isElementInView( $element ){
-			if( isPxInView( $element.offset().top ) || isPxInView( $element.offset().top + $element.outerHeight() ) ){
+		p.isElementInView = function isElementInView( $element ){
+			if( this.isPxInView( $element.offset().top ) || this.isPxInView( $element.offset().top + $element.outerHeight() ) ){
 				return true;
-			} else if ( isElementCoveringView( $element ) ){
+			} else if ( this.isElementCoveringView( $element ) ){
 				return true;
 			}
 			return false;
 		}
-		function isCustomInView( isInViewTest ){
-			return isInViewTest( info );
-		}
-
-		/* ==== ADDING TRACKERS ============================================= */
-		function addPointTracker( name, point ){
-			var type = false;
-			if ( _.isString( point ) && point.indexOf( '%' ) === (point.length - 1) ){
-				type = 'percent';
-				value = parseInt( point );
-			} else if ( _.isNumber( point ) ) {
-				type = 'pixel';
-				value = parseInt( point );
-			}
-			trackers.add({
-				id: name,
-				type: type,
-				value: value,
-				inView: false
-			});
-		}
-		function addElementTracker( name, $element ){
-			if ( $element instanceof jQuery && $element.size() > 0 ){
-				// just pass through
-			} else if ( _.isElement( $element ) ){
-				$element = $( $element );
-			} else {
-				return;
-			}
-			trackers.add({
-				id: name,
-				type: 'element',
-				value: $element,
-				inView: false
-			});
-		}
-		function addCustomTracker( name, inViewTest ){
-			trackers.add({
-				id: name,
-				type: 'custom',
-				value: inViewTest,
-				inView: false
-			});
-		}
-
-		function addTracker( name, value ){
-			if ( _.isString( value ) || _.isNumber( value ) ){
-				addPointTracker( name, value );
-			} else if ( _.isFunction( value ) ){
-				addCustomTracker( name, value );
-			} else {
-				addElementTracker( name, value );
-			}
-		}
 
 		/* ==== INITIALIZE! ============================================= */
-		function handleScroll(e){
-			var s = $body.scrollTop();
-			info.direction = info.progress.px < s ? 'down' : 'up';
-			info.progress.px = s;
-			info.progress.percent = info.progress.px / getScrollHeight() * 100;
-			info.screenBottom.px = s + info.windowHeight;
-			info.screenBottom.percent = info.screenBottom.px / getScrollHeight() * 100;
-			
-			// assign events
-			trackers.each( function( tracker, id ){
-				tracker.handleScroll();
-				if ( tracker.get('inView') ){
-					scrolling.trigger( tracker.get('id') + ':inView', tracker );
-				}
-			});
-		}
-		// you got it, track all the information on resize.
-		$window.on( 'resized-h resized-init', function(){
-			// wait just a bit to make sure sections are full-height
-			setTimeout( function(){
-				info.windowHeight = $window.height();
-				info.bodyHeight = $body.height();
-			}, 10 );
-		});
-		$window.on( 'resized-w resized-init', function(){
-			// wait just a bit to make sure sections are full-height
-			setTimeout( function(){
-				info.bodyHeight = $body.height();
-			}, 10 );
-		});
-		$window.on( 'scroll', handleScroll);
-		_.each( settings.trackers, function( value, name ){
-			addTracker( name, value );
-		});
-		trackers.on( 'change:inView', function( tracker ){
-			var eventName = tracker.get('id');
-			eventName += tracker.get('inView') ? ':enteredView' : ':leftView';
-			scrolling.trigger( eventName, tracker );
-		});
 
-		/* ==== API ============================================= */
-		scrolling.getScrollHeight = getScrollHeight;
-		scrolling.getPxInPercent = getPxInPercent;
-		scrolling.getPercentInPx = getPercentInPx;
-		scrolling.isPxInView = isPxInView;
-		scrolling.isPercentInView = isPercentInView;
-		scrolling.isElementCoveringView = isElementCoveringView;
-		scrolling.isElementInView = isElementInView;
-		scrolling.isCustomInView = isCustomInView;
-		scrolling.addTracker = addTracker;
-		scrolling.getTracker = function( name ){
-			return trackers.get( name );
-		};
-		scrolling.getProgress = function(){
-			return info.progress;
+
+		// ensure only one is created.
+		var scrollInfo = false;
+		return function init(){
+			if ( ! scrollInfo ) scrollInfo = new WindowScrollInfo();
+			return scrollInfo;
 		}
-		return scrolling;
-	}({}) );
+	}() );
+	jQuery.fn.scrollTracker = function( args ){
+		var scrolling = Scrolling();
+		var methods = {};
+		methods.isInView = function(){
+			return $(this).data('inView');
+		}
+		methods.isCoveringView = function(){
+			return methods.getScreenPos.apply( this, ['%'] ) <= 0 && methods.getBottomScreenPos.apply( this, ['%'] ) >= 1;
+		};
+		methods.getPercentOfViewCovered = function(){
+			if ( ! this.data('inView' ) ) return 0;
+			
+			if ( this.getScreenPos( '%' ) <= 0 ){
+				amount = this.getScreenPos( '%', true );
+			} else if ( this.getScreenPos( '%', true ) >= 1 ){
+				amount = this.getBottomScreenPos( '%' );
+			} else {
+				amount = this.getScreenPos( '%', true ) - this.getScreenPos( '%' );
+			}
+			if ( amount > 1 ) amount = 1;
+			return amount;
+		};
+		methods.getPos = function( unit, fromBottom ){
+			if ( !fromBottom ) fromBottom = false;
+			if ( unit === 'percent' ) unit = '%';
+			
+			if ( fromBottom ){
+				return unit === '%' ? 1 - scrolling.getPxInPercent( $(this).offset().top ) : scrolling.get( 'fullHeight' ) - $(this).offset().top ;
+			} else {
+				return unit === '%' ? scrolling.getPxInPercent( $(this).offset().top ) : $(this).offset().top ;
+			}
+		}
+		methods.getBottomPos = function( unit, fromBottom ){
+			if ( !fromBottom ) fromBottom = false;
+			if ( unit === 'percent' ) unit = '%';
+			var $el = $(this);
+			var bottomPos = $el.offset().top + $el.outerHeight();
+			if ( fromBottom ){
+				return unit === '%' ? 1 - scrolling.getPxInPercent( bottomPos ) : scrolling.get('fullHeight') - bottomPos ;
+			} else {
+				return unit === '%' ? scrolling.getPxInPercent( bottomPos ) : bottomPos ;
+			}
+		}
+		methods.getScreenPos = function( unit, fromBottom ){
+			if ( !fromBottom ) fromBottom = false;
+			if ( unit === 'percent' ) unit = '%';
+
+			var fromScreenTop = methods.getPos.apply( this, ['px'] ) - scrolling.getProgress( 'px' );
+			if ( fromBottom ){
+				return unit === '%' ? 1 - fromScreenTop / scrolling.get('windowHeight') : scrolling.get( 'windowHeight' ) - fromScreenTop;
+			} else {
+				return unit === '%' ? fromScreenTop / scrolling.get('windowHeight') : fromScreenTop;
+			}
+		}
+		methods.getBottomScreenPos = function(unit, fromBottom){
+			if ( !fromBottom ) fromBottom = false;
+			if ( unit === 'percent' ) unit = '%';
+
+			var fromScreenTop = methods.getBottomPos.apply( this, ['px'] ) - scrolling.getProgress( 'px' ) ;
+			if ( fromBottom ){
+				return unit === '%' ? 1 - fromScreenTop / scrolling.get('windowHeight') : scrolling.get( 'windowHeight' ) - fromScreenTop;
+			} else {
+				return unit === '%' ? fromScreenTop / scrolling.get('windowHeight') : fromScreenTop;
+			}
+		}
+		$.extend( methods, Events );
+		// calling a method
+		function handleScroll( scrolling ){
+			var inView = scrolling.isElementInView( $(this) );
+			if ( $(this).data('inView') !== inView ){
+				if ( inView ){
+					methods.trigger.apply( this, [ 'enteredView' ] );
+				} else {
+					methods.trigger.apply( this, [ 'leftView' ] );
+				}
+				$(this).data('inView', scrolling.isElementInView( $(this) ) );
+			}
+			if ( inView ){
+				methods.trigger.apply( this, [ 'inView' ] );
+			}
+		}
+		this.each( function(){
+			// scroll event is fired AFTER all the info object (on which all the calculations depend) is updated.
+			scrolling.on( 'scroll', handleScroll.bind( this ) );
+			var api = {};
+			for( methodName in methods ){
+				if ( methods.hasOwnProperty( methodName ) ){
+					api[ methodName ] = methods[ methodName ].bind( this );
+				}
+			}
+			$(this).data('scrollTracker', api );
+		});
+		return this;
+	}
+	api2 = $('.test-div-2').scrollTracker().data( 'scrollTracker' );
+	api2.on( 'enteredView', function(){
+		console.log( 'entered' );
+	});
+	api2.on( 'leftView', function(){
+		console.log( 'left!');
+	});
+	api2.on( 'inView', function(){
+		console.log( 'inView!');
+	});
+});
