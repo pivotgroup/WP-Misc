@@ -34,13 +34,14 @@ jQuery( function($){
 				info.screenBottom.percent = info.screenBottom.px / this.getScrollHeight();
 				
 				this.trigger( 'scroll', this );
+				this.trickerCheckPoints();
 			}
 			// you got it, track all the information on resize.
 			$window.on( 'resize', function(){
 				info.windowHeight = $window.height();
 				info.fullHeight = $html.height();
 			});
-			$window.on( 'scroll load', handleScroll.bind( this ) );
+			$window.on( 'scroll', handleScroll.bind( this ) );
 			$.extend( this, Events );
 		}
 		var p = WindowScrollInfo.prototype;
@@ -81,7 +82,56 @@ jQuery( function($){
 			}
 			return false;
 		}
-
+		p._checkPoints = {
+			top: { type: 'function', value: function( s ){ return s.getProgress().percent <= 0; } },
+			bottom: { type: 'function', value: function( s ){ return s.getProgress( '%' ) >= 1; }},
+		};
+		p.addCheckPoint = function( eventName, point ){
+			var checkpoint = {
+				type: false,
+				value: point,
+				inView: false
+			};
+			if ( typeof( point ) === 'string' ){
+				if ( point.substr( point.length - 1 ) === '%' ){
+					checkpoint.type = '%';
+					checkpoint.value = parseFloat( point.substr( 0, point.length - 1 ) )/100;
+				} else if ( point.substr( point.length - 2 ) === 'px' ){
+					checkpoint.type = 'px';
+					checkpoint.value = parseInt( point.substr( 0, point.length - 2 ) );
+				}
+			} else if ( typeof( point ) === 'number' ){
+				checkpoint.type = 'px';
+				checkpoint.value = parseInt( point );
+			} else if ( typeof( point ) === 'function' ){
+				checkpoint.type = 'function';
+				checkpoint.value = point;
+			}
+			this._checkPoints[ eventName ] = checkpoint;
+		}
+		p.removeCheckPoint = function( eventName ){
+			delete this._checkPoints[ eventName ];
+		}
+		p.trickerCheckPoints = function(){
+			var inView;
+			for ( eventName in this._checkPoints ){
+				var cp = this._checkPoints[ eventName ];
+				inView = false;
+				switch( cp.type ){
+					case 'px': inView = this.isPxInView( cp.value ); break;
+					case '%': inView = this.isPercentInView( cp.value ); break;
+					case 'function': inView = cp.value( this ); break;
+					default: inView = false;
+				}
+				if ( inView !== cp.inView ){
+					this.trigger( inView ? eventName + ':enteredView' : eventName + ':leftView' );
+					cp.inView = inView;
+				}
+				if ( inView ){
+					this.trigger( eventName + ':inView' );
+				}
+			}
+		}
 		/* ==== INITIALIZE! ============================================= */
 
 
@@ -186,14 +236,20 @@ jQuery( function($){
 		});
 		return this;
 	}
-	api2 = $('.test-div-2').scrollTracker().data( 'scrollTracker' );
-	api2.on( 'enteredView', function(){
-		console.log( 'entered' );
-	});
-	api2.on( 'leftView', function(){
-		console.log( 'left!');
-	});
-	api2.on( 'inView', function(){
-		console.log( 'inView!');
-	});
+	/* ==== EXAMPLE USAGE ============================================= */
+	// track elements
+	s = $('.test-div').scrollTracker().data('scrollTracker');
+	s.on( 'enteredView', function(){ $(this).addClass('inView'); } );
+	s.on( 'inView', function(){} );
+	s.on( 'leftView', function(){  $(this).removeClass('inView'); } );
+	
+	// or checkpoints
+	var scrolling = Scrolling();
+	scrolling.addCheckPoint( 'point1', 100);
+	scrolling.addCheckPoint( 'point1', '100px');
+	scrolling.addCheckPoint( 'point1', '100%');
+	scrolling.addCheckPoint( 'point1', function(s){ return s.getProgress( '%' ) >= .5 });
+	scrolling.on( 'point1:enteredView',function(s){});
+	scrolling.on( 'point1:inView',function(s){});
+	scrolling.on( 'point1:leftView',function(s){});
 });
