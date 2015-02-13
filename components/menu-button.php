@@ -9,6 +9,23 @@
 </a>
 
 // scss
+.menu-button {
+	.open-text,
+	.close-text {
+		padding-left: 5px;
+	}
+	.close-text {
+		display: none;
+	}
+	&.active {
+		.open-text {
+			display: none;
+		}
+		.close-text {
+			display: inline-block;
+		}
+	}
+}
 .menu-icon {
 	cursor: pointer;
 	margin: 0 auto;
@@ -36,7 +53,11 @@
 		top: 14px;
 		margin-bottom: -1px;
 	}
-	.menu-button.active & {
+	.close-text {
+		display: none;
+	}
+	.menu-button.active &,
+	&.active {
 		>.top,
 		>.bottom {
 			backface-visibility: hidden;
