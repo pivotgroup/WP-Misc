@@ -1,4 +1,6 @@
-<?php $classes = array( 'button' );
+<?php
+/* ==== TEMPLATE ============================================= */
+$classes = array( 'button' );
 if ( !empty( $has_arrow ) ) $classes[] = 'has-arrow';
 
 echo sprintfLink( $link, $text, implode( ' ', $classes ) ); ?>
