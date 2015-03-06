@@ -1,3 +1,4 @@
+/* ==== MENU BUTTON 1 ============================================= */
 <a class="menu-button">
 	<span class="open-text">Menu</span>
 	<span class="close-text">Close</span>
@@ -81,6 +82,74 @@
 			-o-transform: rotate(-410deg);
 			-ms-transform: rotate(-410deg);
 			transform: rotate(-410deg);
+		}
+	}
+}
+
+// js
+toggling.init( $('header.site nav .menu-button'), $('header.site nav .menu' ) )
+
+/* ==== MENU BUTTON 2 ============================================= */
+// html
+<div class="menu-icon">
+	<span></span>
+	<span></span>
+	<span></span>
+	<span></span>
+</div>
+
+// scss
+.menu-icon {
+	position: relative;
+	cursor: pointer;
+	width: 32px;
+	height: 24px;
+	> span {
+		display: block;
+		position: absolute;
+		height: 4px;
+		width: 100%;
+		background: $darkGray;
+		border-radius: 4px;
+		opacity: 1;
+		left: 0;
+		@include transition( all .3s ease );
+		&:nth-child(1){
+  			top: 0px;
+		}
+		&:nth-child(2),
+		&:nth-child(3){
+			top: 10px;
+		}
+		&:nth-child(4){
+  			top: 20px;
+		}
+	}
+	&.active {
+		> span {
+			background: $blue;
+			&:nth-child(1){
+				top: 10px;
+				width: 0%;
+				left: 50%;
+			}
+			&:nth-child(2) {
+				-webkit-transform: rotate(-45deg);
+				-moz-transform: rotate(-45deg);
+				-o-transform: rotate(-45deg);
+				transform: rotate(-45deg);
+			}
+			&:nth-child(3){
+				-webkit-transform: rotate(45deg);
+				-moz-transform: rotate(45deg);
+				-o-transform: rotate(45deg);
+				transform: rotate(45deg);
+			}
+			&:nth-child(4){
+				top: 10px;
+				width: 0%;
+				left: 50%;
+			}
 		}
 	}
 }
