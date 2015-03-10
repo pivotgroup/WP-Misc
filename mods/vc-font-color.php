@@ -1,4 +1,4 @@
-
+/* ==== ADD FONT COLOR TO VC ROWS ============================================= */
 add_action( 'vc_after_init', 'add_font_color_to_vc_rows');
 function add_font_color_to_vc_rows(){
 	global $vc_manager;
