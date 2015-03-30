@@ -20,17 +20,15 @@ $Forms->add_shortcode( 'item_list', array(
 
 /* ==== TEMPLATE ============================================= */
 <?php if ( ! $items ) return; ?>
-<div class="items-list">
+<ul class="items-list">
 	<?php foreach( $items as $item ){
 		if ( ! $item['text'] ) continue; ?>
-		<div class="item">
-			<h4 class="item-title">
-			<?php if ( $item['link']['url'] ){ ?>
-				<?= sprintfLink( $item['link'], $item['text'] ); ?>
-			<?php } else { ?>
-				<span class="no-link"><?= $item['text']; ?></span>
-			<?php } ?>
-			</h4>
-		</div>
+		<li class="item">
+		<?php if ( $item['link']['url'] ){ ?>
+			<?= sprintfLink( $item['link'], $item['text'] ); ?>
+		<?php } else { ?>
+			<span class="no-link"><?= $item['text']; ?></span>
+		<?php } ?>
+		</li>
 	<?php } ?>
-</div>
+</ul>
