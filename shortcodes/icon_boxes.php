@@ -4,8 +4,8 @@
 ?>
 <div class="icon-boxes number-boxes-<?= sizeof( $boxes ); ?> cf">
 	<?php foreach( $boxes as $box ){
-		$target = $box['link']['target'] ? 'target="_blank"' : '';
-		$title = $box['link']['title'] ? 'title="'.$box['link']['title'].'"' : ''; ?>
+		$target = !empty( $box['link']['target'] ) ? 'target="_blank"' : '';
+		$title = !empty( $box['link']['title'] ) ? 'title="'.$box['link']['title'].'"' : ''; ?>
 	<div class="icon-box">
 		<a href="<?= $box['link']['url']; ?>" <?= $target; ?> <?= $title; ?>>
 			<span class="icon">
@@ -15,7 +15,7 @@
 					<i class="fa fa-<?= $box['icon']; ?>"></i>
 				<?php } ?>
 			</span>
-			<span class="title"><?= $box['title']; ?></span>
+			<span class="title"><?= !empty( $box['title'] ) ? $box['title'] : ''; ?></span>
 		</a>
 	</div>
 	<?php } ?>
