@@ -111,13 +111,11 @@ $Forms->add_shortcode( 'price_boxes', array(
 		padding-right: 15px;
 	}
 	> .title {
-		background: $skyBlue;
 		color: #fff;
 		padding: 1em 0;
 		border-bottom: 1px solid #fff;
 	}
 	> .price {
-		background: $skyBlue;
 		color: #fff;
 		padding: 1em 0;
 	}
@@ -129,9 +127,9 @@ $Forms->add_shortcode( 'price_boxes', array(
 		font-size: 14px;
 		color: #808285;
 		.item {
+			padding: .25em 15px;
 			+ .item {
 				border-top: 1px solid #fff;
-				padding: .25em 15px;
 			}
 		}
 	}
@@ -145,7 +143,6 @@ $Forms->add_shortcode( 'price_boxes', array(
 		z-index: 1;
 		> .title,
 		> .price {
-			background: $orange;
 		}
 	}
 }
